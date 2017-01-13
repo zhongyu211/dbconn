@@ -3,7 +3,7 @@
 import psycopg2
 import traceback
 import time
-class pgconn():
+class pgconn(object):
     def __init__(self,work_content,dbname='****',user='***',password='******', host='****************',port=5439):
         self.database = dbname
         self.user = user
@@ -14,6 +14,10 @@ class pgconn():
         self.retrys = 10
 
     def dowork(self):
+        """
+        process the sql whthout return value
+
+        """
         try:
             conn = psycopg2.connect(host=self.host, port=self.port, user=self.user, password=self.password, database=self.database)
             conn.autocommit =True
@@ -33,6 +37,10 @@ class pgconn():
                 traceback.print_exc()
 
     def query(self):
+        """
+        process the sql whth return value
+
+        """
         try:
             conn = psycopg2.connect(host=self.host, port=self.port, user=self.user, password=self.password, database=self.database)
             conn.autocommit = True
