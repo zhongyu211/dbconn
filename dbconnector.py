@@ -1,60 +1,53 @@
 # -*- coding: utf-8 -*-
-# __author__ = 'mxins@qq.com'
+# __author__ = 'allen zhong'
+import psycopg2
 import traceback
+import time
+class pgconn():
+    def __init__(self,work_content,dbname='****',user='***',password='******', host='****************',port=5439):
+        self.database = dbname
+        self.user = user
+        self.password = password
+        self.host = host
+        self.port = port
+        self.sql = work_content
+        self.retrys = 10
 
-MYSQL = {
-    'host': '127.0.0.1',
-    'user': 'root',
-    'passwd': '12359',
-    'db': 'spark',
-    'port': 3306
-}
-MYSQL = {
-    'host': '127.0.0.1',
-    'user': 'root',
-    'passwd': 'shinezone244',
-    'db': 'spark',
-    'port': 3306
-}
-
-class DbService:
-    def __init__(self, db='mysql'):
-        self.db = db
-        self.conn = None
-        self.cursor = None
-
-    def connect(self):
-        if self.db == 'pg':
-            import psycopg2
-            self.conn = psycopg2.connect(**REDSHIFT)
-            self.conn.autocommit = True
-        else:
-            import MySQLdb
-            self.conn = MySQLdb.Connection(**MYSQL)
-            self.conn.autocommit(True)
-        self.cursor = self.conn.cursor()
-
-    def close(self):
-        self.cursor.close()
-        self.conn.close()
-
-    def execute(self, sql, args=None):
-        self.connect()
+    def dowork(self):
         try:
-            self.cursor.execute(sql, args)
-        except Exception:
-            raise Exception(traceback.format_exc())
-        finally:
-            self.close()
+            conn = psycopg2.connect(host=self.host, port=self.port, user=self.user, password=self.password, database=self.database)
+            conn.autocommit =True
+            cur = conn.cursor()
+            cur.execute(self.sql)
+            cur.close()
+            conn.close()
+            print "upload successfully."
+        except Exception as ex:
+            #InternalError fired when excute sql failed, OperationalError fired when connection failed
+            if ex.__class__.__name__ in ["InternalError","OperationalError"] and self.retrys>0:
+                self.retrys -= 1
+                time.sleep(5)
+                print "Exception: %s, Retry: %d times."%(ex.__class__.__name__,10-self.retrys)
+                self.dowork()
+            else:
+                traceback.print_exc()
 
-    def query(self, sql):
-        self.connect()
+    def query(self):
         try:
-            self.cursor.execute(sql)
-            res = self.cursor.fetchall()
-        except Exception:
-            raise Exception(traceback.format_exc())
-        finally:
-            self.close()
-        return res
-
+            conn = psycopg2.connect(host=self.host, port=self.port, user=self.user, password=self.password, database=self.database)
+            conn.autocommit = True
+            cur = conn.cursor()
+            cur.execute(self.sql)
+            res = cur.fetchall()
+            cur.close()
+            conn.close()
+            return res
+            print "upload successfully."
+        except Exception as ex:
+            if ex.__class__.__name__ in ["InternalError", "OperationalError"] and self.retrys > 0:
+                self.retrys -= 1
+                time.sleep(5)
+                print "Exception: %s, Retry: %d times." % (ex.__class__.__name__, 10 - self.retrys)
+                self.query()
+            else:
+                traceback.print_exc()
